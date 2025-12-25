@@ -182,10 +182,11 @@ const UploadVideo = () => {
             if (transcriptText) {
               const currentTime = video.currentTime;
               const estimatedDuration = Math.max(1.5, transcriptText.split(/\s+/).length / 2.5);
-              const endTime = currentTime + estimatedDuration;
+              const endTime = currentTime;
+              const startTime = Math.max(0, currentTime - estimatedDuration);
 
               const segment = {
-                start: parseFloat(currentTime.toFixed(2)),
+                start: parseFloat(startTime.toFixed(2)),
                 end: parseFloat(endTime.toFixed(2)),
                 text: transcriptText,
               };
