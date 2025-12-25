@@ -17,7 +17,7 @@ import Settings from '@/pages/Settings';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 function App() {
@@ -37,6 +37,8 @@ function App() {
             <Route path="history" element={<History />} />
             <Route path="settings" element={<Settings />} />
           </Route>
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AuthProvider>
