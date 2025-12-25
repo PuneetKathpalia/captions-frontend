@@ -36,6 +36,7 @@ const UploadVideo = () => {
   const [segments, setSegments] = useState([]);
   const [micSupported, setMicSupported] = useState(false);
   const [micActive, setMicActive] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
 
   const videoRef = useRef(null);
@@ -130,6 +131,12 @@ const UploadVideo = () => {
       setSegments([]);
       setCurrentSegmentIndex(0);
       setError('');
+      
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.load();
+        }
+      }, 100);
     } catch (err) {
       setUploading(false);
       const message = err.response?.data?.message || err.message || 'Video upload failed. Make sure backend is running.';
@@ -168,18 +175,21 @@ const UploadVideo = () => {
 
     recognition.onstart = () => {
       setError('');
+      setIsListening(true);
     };
 
     recognition.onresult = (event) => {
       const video = videoRef.current;
       if (!video) return;
 
+      setIsListening(false);
       let interimText = '';
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         
         if (event.results[i].isFinal) {
+          setIsListening(true);
 
           if (i >= lastFinalIndex) {
             lastFinalIndex = i + 1;
@@ -238,7 +248,17 @@ const UploadVideo = () => {
     };
 
     recognition.onend = () => {
-      setMicActive(false);
+      const video = videoRef.current;
+      if (video && !video.paused && micActive) {
+        if (micRestartTimeoutRef.current) {
+          clearTimeout(micRestartTimeoutRef.current);
+        }
+        micRestartTimeoutRef.current = setTimeout(() => {
+          startMicTranscription();
+        }, 300);
+      } else {
+        setMicActive(false);
+      }
     };
 
     micRecognitionRef.current = recognition;
@@ -258,6 +278,7 @@ const UploadVideo = () => {
       micRestartTimeoutRef.current = null;
     }
     setMicActive(false);
+    setIsListening(false);
   };
 
   const downloadCaptions = async (format) => {
@@ -461,8 +482,11 @@ const UploadVideo = () => {
                     onEnded={stopMicTranscription}
                   />
                   {micActive && (
-                    <div className="absolute bottom-8 left-8 right-8 bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 text-white px-8 py-4 rounded-2xl text-center text-base font-black animate-pulse border border-blue-300/70 shadow-2xl uppercase tracking-widest">
-                      🎤 Recording captions...
+                    <div className="absolute bottom-8 left-8 right-8 bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 text-white px-8 py-4 rounded-2xl text-center text-base font-black border border-blue-300/70 shadow-2xl uppercase tracking-widest">
+                      <div className="flex items-center justify-center gap-3">
+                        <span className="inline-block w-3 h-3 bg-white rounded-full animate-pulse"></span>
+                        🎤 {isListening ? 'Listening...' : 'Recording captions...'}
+                      </div>
                     </div>
                   )}
                 </div>
