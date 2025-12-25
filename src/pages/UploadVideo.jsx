@@ -148,7 +148,13 @@ const UploadVideo = () => {
       return;
     }
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
     } catch (permErr) {
       setError('Microphone permission denied. Please allow mic access.');
       return;
